@@ -99,7 +99,20 @@ def task(request):
     print(f"{raw_tbl_sql}")
     md.sql(raw_tbl_sql)  
 
-    
+    # game_team
+    raw_tbl_name = f"{db_schema}.game_team"
+    raw_tbl_sql = f"""
+    CREATE TABLE IF NOT EXISTS {raw_tbl_name} (
+        game_id INT 
+        ,team_id INT
+        ,home_away VARCHAR
+        ,score INT
+        ,ingest_timestamp TIMESTAMP
+        ,PRIMARY KEY (game_id, team_id)
+    );
+    """
+    print(f"{raw_tbl_sql}")
+    md.sql(raw_tbl_sql)  
 
 
     # return a dictionary/json entry, its blank because are not returning data, 200 for success
