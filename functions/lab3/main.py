@@ -1,4 +1,4 @@
-import pandas as pd
+import requests
 import functions_framework
 
 @functions_framework.http
