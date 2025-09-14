@@ -59,6 +59,8 @@ def task(request):
         ,country VARCHAR
         ,indoor BOOLEAN
         ,ingest_timestamp TIMESTAMP
+        ,source_path VARCHAR
+        ,run_id VARCHAR
     );
     """
     print(f"{raw_tbl_sql}")
@@ -75,6 +77,8 @@ def task(request):
         ,venue_id INT
         ,attendance INT
         ,ingest_timestamp TIMESTAMP
+        ,source_path VARCHAR
+        ,run_id VARCHAR
     );
     """
     print(f"{raw_tbl_sql}")
@@ -94,6 +98,8 @@ def task(request):
         ,venue_id INT
         ,logo VARCHAR
         ,ingest_timestamp TIMESTAMP
+        ,source_path VARCHAR
+        ,run_id VARCHAR
     );
     """
     print(f"{raw_tbl_sql}")
@@ -108,6 +114,8 @@ def task(request):
         ,home_away VARCHAR
         ,score INT
         ,ingest_timestamp TIMESTAMP
+        ,source_path VARCHAR
+        ,run_id VARCHAR
         ,PRIMARY KEY (game_id, team_id)
     );
     """
