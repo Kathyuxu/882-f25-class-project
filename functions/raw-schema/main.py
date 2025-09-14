@@ -11,7 +11,7 @@ version_id = 'latest'
 
 # db setup
 db = 'nfl'
-schema = "raw"
+schema = "stage"
 db_schema = f"{db}.{schema}"
 
 @functions_framework.http
