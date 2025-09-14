@@ -17,3 +17,19 @@ gcloud functions deploy raw-schema-setup \
     --region us-central1 \
     --allow-unauthenticated \
     --memory 512MB 
+
+echo "======================================================"
+echo "deploying the scoreboard extractor"
+echo "======================================================"
+
+gcloud functions deploy extract-scoreboard \
+    --gen2 \
+    --runtime python312 \
+    --trigger-http \
+    --entry-point task \
+    --source ./extract-scoreboard \
+    --stage-bucket btibert-ba882-fall25-functions \
+    --service-account ba882-fall25@btibert-ba882-fall25.iam.gserviceaccount.com \
+    --region us-central1 \
+    --allow-unauthenticated \
+    --memory 512MB 
