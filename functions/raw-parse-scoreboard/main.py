@@ -49,7 +49,7 @@ def task(request):
     # read in the file from gcs that was created as part of this "run"
     bucket_name = request_json.get("bucket_name", "btibert-ba882-fall25-nfl")
     bucket = storage_client.bucket(bucket_name)
-    blob_name = request_json.get("blob_name", "raw/scoreboard/487db0274c68/data.json")
+    blob_name = request_json.get("blob_name", "raw/scoreboard/season=2025/week=2/9b8ef48f3092/data.json")
     blob = bucket.blob(blob_name)
     data_str = blob.download_as_text()
     j = json.loads(data_str)
@@ -61,21 +61,21 @@ def task(request):
     # isolate data elements
     venues = []
     games = []
-    teams = []
+    _team = []
     gameteam = []
+    ingest_ts_str = pd.Timestamp.utcnow().strftime("%Y-%m-%d %H:%M:%S")
 
     # walk the data - this 100% could be improved?  how? what would you do differently?
     for e in events:
         game_id = e.get('id')
-        start_date = e.get('date')
+        start_date = pd.to_datetime(e.get("date"), utc=True).tz_localize(None)
         season = e['season']['year']
         week = e['week']['number']
         venue = e['competitions'][0]['venue']
         teams = e['competitions'][0]['competitors']
         attendance = e['competitions'][0]['attendance']
-        ingest_timestamp = pd.Timestamp.now("UTC").tz_localize(None)
         source_path = bucket_name + blob_name
-        run_id = request_json.get('run_id')
+        run_id = request_json.get('run_id', '9b8ef48f3092')
         
         # append the info for games and venues
         games.append(
@@ -86,7 +86,7 @@ def task(request):
                 'week': week,
                 'venue_id': venue['id'],
                 'attendance': attendance,
-                'ingest_timestamp': ingest_timestamp,
+                'ingest_timestamp': ingest_ts_str,
                 'source_path': source_path,
                 'run_id': run_id
             }
@@ -100,7 +100,7 @@ def task(request):
                 'state': venue['address']['state'],
                 'country': venue['address']['country'],
                 'indoor': venue['indoor'],
-                'ingest_timestamp': ingest_timestamp,
+                'ingest_timestamp': ingest_ts_str,
                 'source_path': source_path,
                 'run_id': run_id
             }
@@ -109,17 +109,17 @@ def task(request):
         # parse out teams by using json to flatten out the data
         teams_parsed  = pd.json_normalize(teams)
 
-        teams = teams_parsed.copy()
+        teams_df = teams_parsed.copy()
         team_cols = ['id', 
-                     'team.name', 
-                     'team.abbreviation',
-                     'team.displayName',
-                     'team.shortDisplayName',
-                     'team.color',
-                     'team.alternateColor',
-                     'team.venue.id',
-                     'team.logo']
-        teams = teams[team_cols]
+                        'team.name', 
+                        'team.abbreviation',
+                        'team.displayName',
+                        'team.shortDisplayName',
+                        'team.color',
+                        'team.alternateColor',
+                        'team.venue.id',
+                        'team.logo']
+        teams_df = teams_df[team_cols]
         rename_mapper = {
             'team.name':'name',
             'team.displayName': 'display_name',
@@ -129,36 +129,86 @@ def task(request):
             'team.venue.id': 'venue_id',
             'team.logo':'logo'
         }
-        teams = teams.rename(columns=rename_mapper)
-        teams['ingest_timestamp'] = ingest_timestamp
-        teams['source_path'] = source_path
-        teams['run_id'] = run_id
-        teams.append(teams)
+        teams_df = teams_df.rename(columns=rename_mapper)
+        teams_df['ingest_timestamp'] = ingest_ts_str
+        teams_df['source_path'] = source_path
+        teams_df['run_id'] = run_id
+        _team.append(teams_df)
 
         # the data are mostly there for game team
         game_team = teams_parsed.copy()
         game_team = game_team[['id', 'homeAway', 'score']]
         game_team.insert(0, 'game_id', game_id) # insert the game id as the first column
         game_team = game_team.rename(columns = {
-            'homeAway': 'home_away'
+            'homeAway': 'home_away',
+            'id': 'team_id'
         })
-        game_team['ingest_timestamp'] = ingest_timestamp
+        game_team['ingest_timestamp'] = ingest_ts_str
         game_team['source_path'] = source_path
         game_team['run_id'] = run_id
         gameteam.append(game_team)
     
     # with the data parsed, put into dataframes across the full dataset
     games_df = pd.DataFrame(games)
+    games_df['ingest_timestamp'] = pd.to_datetime(games_df['ingest_timestamp'], errors="coerce")
     venues_df = pd.DataFrame(venues)
-    teams_df = pd.concat(teams)
+    venues_df['ingest_timestamp'] = pd.to_datetime(venues_df['ingest_timestamp'], errors="coerce")
+    teams_df = pd.concat(_team)
+    teams_df = teams_df.dropna(subset="id") # a bug/parse issue crept in
+    teams_df['ingest_timestamp'] = pd.to_datetime(teams_df['ingest_timestamp'], errors="coerce")
     gt_df = pd.concat(gameteam)
+    gt_df = gt_df.dropna(subset="team_id")
+    gt_df['ingest_timestamp'] = pd.to_datetime(gt_df['ingest_timestamp'], errors="coerce")
+
 
     # log
     print(f"length of games: {len(games_df)} =======")
-    print(f"length of games: {len(venues_df)} =======")
-    print(f"length of games: {len(teams_df)} =======")
-    print(f"length of games: {len(gt_df)} =======")
+    print(f"length of venues: {len(venues_df)} =======")
+    print(f"length of teams: {len(teams_df)} =======")
+    print(f"length of game_teams: {len(gt_df)} =======")
 
+    # write to games gcs - both at the core and within the partition of the run id
+    gcs_path = "gs://btibert-ba882-fall25-nfl/raw"
+    full_path = gcs_path + f"/games/season={season}/week={week}/data.parquet"
+    games_df.to_parquet(full_path, index=False)
+    full_path_run = gcs_path + f"/games/season={season}/week={week}/run_id={run_id}/data.parquet"
+    games_df.to_parquet(full_path_run, index=False)
+
+    # venues 
+    full_path = gcs_path + f"/venues/season={season}/week={week}/data.parquet"
+    venues_df.to_parquet(full_path, index=False)
+    full_path_run = gcs_path + f"/venues/season={season}/week={week}/run_id={run_id}/data.parquet"
+    venues_df.to_parquet(full_path_run, index=False)
+
+    # teams
+    full_path = gcs_path + f"/teams/season={season}/week={week}/data.parquet"
+    teams_df.to_parquet(full_path, index=False)
+    full_path_run = gcs_path + f"/teams/season={season}/week={week}/run_id={run_id}/data.parquet"
+    teams_df.to_parquet(full_path_run, index=False)
+
+    # game_team
+    full_path = gcs_path + f"/game_team/season={season}/week={week}/data.parquet"
+    gt_df.to_parquet(full_path, index=False)
+    full_path_run = gcs_path + f"/game_team/season={season}/week={week}/run_id={run_id}/data.parquet"
+    gt_df.to_parquet(full_path_run, index=False)
+
+    # insert/append into the raw tables in the warehouse (MotherDuck)
+    print(f"appending rows to raw/games")
+    tbl = db_schema + ".games"
+    md.execute(f"INSERT INTO {tbl} SELECT * FROM games_df")
+
+    print(f"appending rows to raw/venues")
+    tbl = db_schema + ".venues"
+    md.execute(f"INSERT INTO {tbl} SELECT * FROM venues_df")
+
+    print(f"appending rows to raw/teams")
+    tbl = db_schema + ".teams"
+    md.execute(f"INSERT INTO {tbl} SELECT * FROM teams_df")
+
+    print(f"appending rows to raw/game teams")
+    tbl = db_schema + ".game_team"
+    md.execute(f"INSERT INTO {tbl} SELECT * FROM gt_df")
+    
 
     return {}, 200
 
