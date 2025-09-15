@@ -2,6 +2,10 @@
 
 This is the repo to help you follow along with the code samples.  
 
+## Quick Code Samples
+
+- gcloud config set project btibert-ba882-fall25
+
 
 ## Tips and Tricks
 
