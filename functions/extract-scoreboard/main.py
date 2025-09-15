@@ -52,7 +52,9 @@ def task(request):
 
     # write the data to GCS
     j_string = json.dumps(j)
-    _path = f"raw/scoreboard"
+    season = j['leagues'][0]['season']['year']
+    week = j['events'][0]['week']['number']
+    _path = f"raw/scoreboard/season={season}/week={week}"
     gcs_path = upload_to_gcs(bucket_name, path=_path, run_id=run_id, data=j_string)
 
     # return the metadata
