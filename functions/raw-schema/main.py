@@ -52,7 +52,7 @@ def task(request):
     raw_tbl_name = f"{db_schema}.venues"
     raw_tbl_sql = f"""
     CREATE TABLE IF NOT EXISTS {raw_tbl_name} (
-        id 
+        id INT
         ,fullname VARCHAR
         ,city VARCHAR
         ,state VARCHAR
