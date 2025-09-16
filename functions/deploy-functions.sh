@@ -22,7 +22,7 @@ echo "======================================================"
 echo "deploying the scoreboard extractor"
 echo "======================================================"
 
-gcloud functions deploy extract-scoreboard \
+gcloud functions deploy raw-extract-scoreboard \
     --gen2 \
     --runtime python312 \
     --trigger-http \
