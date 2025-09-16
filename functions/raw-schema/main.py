@@ -52,7 +52,7 @@ def task(request):
     raw_tbl_name = f"{db_schema}.venues"
     raw_tbl_sql = f"""
     CREATE TABLE IF NOT EXISTS {raw_tbl_name} (
-        id INT PRIMARY KEY
+        id 
         ,fullname VARCHAR
         ,city VARCHAR
         ,state VARCHAR
@@ -70,7 +70,7 @@ def task(request):
     raw_tbl_name = f"{db_schema}.games"
     raw_tbl_sql = f"""
     CREATE TABLE IF NOT EXISTS {raw_tbl_name} (
-        id INT PRIMARY KEY
+        id INT 
         ,start_date TIMESTAMP
         ,season INT
         ,week INT
@@ -88,7 +88,7 @@ def task(request):
     raw_tbl_name = f"{db_schema}.teams"
     raw_tbl_sql = f"""
     CREATE TABLE IF NOT EXISTS {raw_tbl_name} (
-        id INT PRIMARY KEY
+        id INT 
         ,name VARCHAR
         ,abbrev VARCHAR
         ,display_name VARCHAR
@@ -116,7 +116,6 @@ def task(request):
         ,ingest_timestamp TIMESTAMP
         ,source_path VARCHAR
         ,run_id VARCHAR
-        ,PRIMARY KEY (game_id, team_id)
     );
     """
     print(f"{raw_tbl_sql}")
