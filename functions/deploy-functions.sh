@@ -38,7 +38,7 @@ echo "======================================================"
 echo "deploying the scoreboard file parser/ingestor"
 echo "======================================================"
 
-gcloud functions deploy raw-parse-scoreboard \
+gcloud functions deploy raw-load-scoreboard \
     --gen2 \
     --runtime python312 \
     --trigger-http \
