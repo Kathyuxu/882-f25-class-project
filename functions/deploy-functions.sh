@@ -27,7 +27,7 @@ gcloud functions deploy raw-extract-scoreboard \
     --runtime python312 \
     --trigger-http \
     --entry-point task \
-    --source ./extract-scoreboard \
+    --source ./raw-extract-scoreboard \
     --stage-bucket btibert-ba882-fall25-functions \
     --service-account ba882-fall25@btibert-ba882-fall25.iam.gserviceaccount.com \
     --region us-central1 \
