@@ -19,7 +19,7 @@ def task_two(fruit):
 
 # Define the flow that calls the tasks
 @flow(log_prints=True)
-def simple_flow(log):
+def simple_flow():
     fruit = task_one()
     task_two(fruit)
 
