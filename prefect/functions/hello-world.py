@@ -18,4 +18,4 @@ def simple_flow():
 
 # Run the flow
 if __name__ == "__main__":
-    simple_flow.serve()
+    simple_flow()
