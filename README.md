@@ -2,9 +2,11 @@
 
 This is the repo to help you follow along with the code samples.  
 
-## Quick Code Samples
+## Quick Code Samples (for Brock)
 
 - gcloud config set project btibert-ba882-fall25
+- astro organization list (teaching is Team 1)
+- astro organization swtich <id>
 
 
 ## Tips and Tricks
