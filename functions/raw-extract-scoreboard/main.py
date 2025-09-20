@@ -56,7 +56,7 @@ def task(request):
         return {
             "num_entries": 0, 
             "run_id": run_id, 
-        }
+        }, 200
 
 
     # otherwise, process the data and save the artifact to GCS

@@ -19,11 +19,11 @@ db_schema = f"{db}.{schema}"
 def task(request):
 
     # Parse the request data
-    request_json = request.get_json(silent=True)
-    print(f"request: {json.dumps(request_json)}")
-    # we should be passing in a payload, but for rapid testing, ensure there is a dictionary
-    if request_json is None:
-        request_json = {'num_entries':1} # force eval on hardcoded test data
+    # request_json = request.get_json(silent=True)
+    # print(f"request: {json.dumps(request_json)}")
+    # # we should be passing in a payload, but for rapid testing, ensure there is a dictionary
+    # if request_json is None:
+    #     request_json = {'num_entries':1} # force eval on hardcoded test data
 
     # instantiate the services 
     sm = secretmanager.SecretManagerServiceClient()
@@ -41,15 +41,17 @@ def task(request):
     ##################################################### core logic: read json from gcs, parse, and insert/store
 
     # if there aren't any records to process, exit
-    num_entries = request_json.get('num_entries', 0)
-    if num_entries < 1:
-        print("no entries found for the date evaluated downsream")
+    num_entries = request.args.get("num_entries")
+    print(f"num_entries = {num_entries}")
+    if int(num_entries) == 0:
+        print("no entries found for the date evaluated downsream - EXITING")
         return {}, 200
+
     
     # read in the file from gcs that was created as part of this "run"
-    bucket_name = request_json.get("bucket_name", "btibert-ba882-fall25-nfl")
+    bucket_name = request.args.get("bucket_name", "btibert-ba882-fall25-nfl")
     bucket = storage_client.bucket(bucket_name)
-    blob_name = request_json.get("blob_name", "raw/scoreboard/season=2025/week=2/9b8ef48f3092/data.json")
+    blob_name = request.args.get("blob_name", "raw/scoreboard/season=2025/week=2/9b8ef48f3092/data.json")
     blob = bucket.blob(blob_name)
     data_str = blob.download_as_text()
     j = json.loads(data_str)
@@ -75,7 +77,7 @@ def task(request):
         teams = e['competitions'][0]['competitors']
         attendance = e['competitions'][0]['attendance']
         source_path = bucket_name + blob_name
-        run_id = request_json.get('run_id', '9b8ef48f3092')
+        run_id = request.args.get('run_id')
         
         # append the info for games and venues
         games.append(
