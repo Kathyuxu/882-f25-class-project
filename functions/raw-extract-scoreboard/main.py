@@ -52,10 +52,11 @@ def task(request):
 
     # handle days where there are no games, just bail out
     if len(j.get('events')) == 0:
-            return {
-                "num_entries": len(j.get('events', [])), 
-                "run_id": run_id, 
-            }
+        print("no entries to process ============================")
+        return {
+            "num_entries": 0, 
+            "run_id": run_id, 
+        }
 
 
     # otherwise, process the data and save the artifact to GCS
