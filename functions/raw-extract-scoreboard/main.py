@@ -50,6 +50,15 @@ def task(request):
     print(f"requested url - status {resp.status_code}")
     j = resp.json()
 
+    # handle days where there are no games, just bail out
+    if len(j.get('events')) == 0:
+            return {
+                "num_entries": len(j.get('events', [])), 
+                "run_id": run_id, 
+            }
+
+
+    # otherwise, process the data and save the artifact to GCS
     # write the data to GCS
     j_string = json.dumps(j)
     season = j['leagues'][0]['season']['year']
