@@ -6,6 +6,7 @@ This is the repo to help you follow along with the code samples.
 
 - gcloud config set project btibert-ba882-fall25
 - curl -sSL install.astronomer.io | sudo bash
+- https://cloud.astronomer.io/token
 - astro organization list (teaching is Team 1)
 - astro organization swtich <id>
 
