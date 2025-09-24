@@ -5,6 +5,7 @@
 from datetime import datetime
 from airflow.decorators import dag, task
 from airflow.models import Variable
+import os
 
 @dag(
     start_date=datetime(2024, 1, 1),
