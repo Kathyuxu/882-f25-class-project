@@ -10,6 +10,8 @@ This is the repo to help you follow along with the code samples.
 - astro login -t <token from above>
 - astro organization list (teaching is Team 1)
 - astro organization swtich <id>
+- astro deploy
+- astro deploy --dags         # just the dags, if we don't change the runtime dependencies, this is much faster
 
 
 ## Tips and Tricks
