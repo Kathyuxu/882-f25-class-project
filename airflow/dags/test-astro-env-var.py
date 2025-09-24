@@ -22,7 +22,20 @@ def get_env_val():
         print(f"brockvar = {brockvar_value}")
         # returning it will push it to XCom
         return brockvar_value
+    
+    @task
+    def fetch_envvar():
+        # Read the environment variable named "BROCKVAR"
+        # You must set BROCKVAR in your container / k8s / docker-compose, etc.
+        md_tok = os.environ.get("MOTHERDUCK_TOKEN")
+        if md_tok is None:
+            # handle missing var as you like
+            raise ValueError("Environment variable md_tok is not set")
+        print(f"md_tok = {md_tok[:7]}")
+        return md_tok
+    
 
     fetch_brockvar()
+    fetch_envvar()
 
 get_env_val()
