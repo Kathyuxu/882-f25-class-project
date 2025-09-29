@@ -7,8 +7,12 @@ This is the repo to help you follow along with the code samples.
 - gcloud config set project btibert-ba882-fall25
 - curl -sSL install.astronomer.io | sudo bash
 - https://cloud.astronomer.io/token
+- astro login -t <token from above>
 - astro organization list (teaching is Team 1)
 - astro organization swtich <id>
+- astro deploy
+- astro deploy --dags         # just the dags, if we don't change the runtime dependencies, this is much faster
+- streamlit run app.py --server.enableXsrfProtection=false --server.enableCORS=false
 
 
 ## Tips and Tricks

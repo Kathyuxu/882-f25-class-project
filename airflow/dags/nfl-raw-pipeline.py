@@ -51,10 +51,33 @@ def nfl_raw_pipeline():
         print(payload)
         resp = invoke_function(url, params=payload)
         return resp
+    
+    @task
+    def extract_game_ids(load_payload: dict) -> list[str]:
+        # returns [] if key missing or empty → mapped task will be skipped
+        ids = load_payload.get("game_ids") or []
+        # dedupe, stringify to be safe for query params
+        ids = [str(x) for x in dict.fromkeys(ids)]
+        print(f"Found {len(ids)} game_ids: {ids}")
+        return ids
+
+    @task
+    def parse_load_game_detail(game_id: str) -> dict:
+        url = "https://us-central1-btibert-ba882-fall25.cloudfunctions.net/raw-parse-game"
+        ctx = get_current_context()
+        params = {
+            "game_id": game_id,
+            "run_id": ctx["dag_run"].run_id,
+        }
+        resp = invoke_function(url, params=params)
+        print(f"Finished game_id={game_id}")
+        return resp
 
     schema_result = schema()
     extract_result = extract(schema_result)
     load_result = load(extract_result)
+    game_ids = extract_game_ids(load_result)
+    _ = parse_load_game_detail.expand(game_id=game_ids)
 
 
 nfl_raw_pipeline()
