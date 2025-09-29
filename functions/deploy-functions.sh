@@ -49,3 +49,51 @@ gcloud functions deploy raw-load-scoreboard \
     --region us-central1 \
     --allow-unauthenticated \
     --memory 512MB 
+
+echo "======================================================"
+echo "function to parse a single game"
+echo "======================================================"
+
+gcloud functions deploy raw-parse-game \
+    --gen2 \
+    --runtime python312 \
+    --trigger-http \
+    --entry-point task \
+    --source ./raw-parse-game \
+    --stage-bucket btibert-ba882-fall25-functions \
+    --service-account ba882-fall25@btibert-ba882-fall25.iam.gserviceaccount.com \
+    --region us-central1 \
+    --allow-unauthenticated \
+    --memory 1GB 
+
+echo "======================================================"
+echo "staging: schema setup"
+echo "======================================================"
+
+gcloud functions deploy stage-schema \
+    --gen2 \
+    --runtime python312 \
+    --trigger-http \
+    --entry-point task \
+    --source ./stage-schema \
+    --stage-bucket btibert-ba882-fall25-functions \
+    --service-account ba882-fall25@btibert-ba882-fall25.iam.gserviceaccount.com \
+    --region us-central1 \
+    --allow-unauthenticated \
+    --memory 512MB 
+
+echo "======================================================"
+echo "staging: load tables"
+echo "======================================================"
+
+gcloud functions deploy stage-load-tables \
+    --gen2 \
+    --runtime python312 \
+    --trigger-http \
+    --entry-point task \
+    --source ./stage-load-tables \
+    --stage-bucket btibert-ba882-fall25-functions \
+    --service-account ba882-fall25@btibert-ba882-fall25.iam.gserviceaccount.com \
+    --region us-central1 \
+    --allow-unauthenticated \
+    --memory 512MB 

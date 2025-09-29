@@ -12,6 +12,7 @@ This is the repo to help you follow along with the code samples.
 - astro organization swtich <id>
 - astro deploy
 - astro deploy --dags         # just the dags, if we don't change the runtime dependencies, this is much faster
+- streamlit run app.py --server.enableXsrfProtection=false --server.enableCORS=false
 
 
 ## Tips and Tricks

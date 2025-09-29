@@ -10,6 +10,7 @@ project_id = 'btibert-ba882-fall25'
 secret_id = 'MotherDuck'   #<---------- this is the name of the secret you created
 version_id = 'latest'
 
+
 # db setup
 db = 'nfl'
 schema = "raw"
@@ -68,8 +69,10 @@ def task(request):
     ingest_ts_str = pd.Timestamp.utcnow().strftime("%Y-%m-%d %H:%M:%S")
 
     # walk the data - this 100% could be improved?  how? what would you do differently?
+    event_ids = [] 
     for e in events:
         game_id = e.get('id')
+        event_ids.append(game_id)
         start_date = pd.to_datetime(e.get("date"), utc=True).tz_localize(None)
         season = e['season']['year']
         week = e['week']['number']
@@ -212,5 +215,5 @@ def task(request):
     md.execute(f"INSERT INTO {tbl} SELECT * FROM gt_df")
     
 
-    return {}, 200
+    return {"game_ids": event_ids}, 200
 
