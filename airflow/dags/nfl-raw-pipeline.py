@@ -2,6 +2,8 @@ from airflow.decorators import dag, task
 from datetime import datetime, timedelta
 from airflow.operators.python import get_current_context
 import requests
+from airflow.operators.trigger_dagrun import TriggerDagRunOperator
+from airflow.exceptions import AirflowSkipException
 
 # helper
 def invoke_function(url, params={}) ->dict:
@@ -14,9 +16,10 @@ def invoke_function(url, params={}) ->dict:
 
 
 @dag(
-    schedule=None,                 # run manually for the demo
-    start_date=datetime(2024, 1, 1),
-    catchup=False,
+    schedule="0 10 * * *",  # this is 10am, daily         
+    start_date=datetime(2025, 9, 4),
+    catchup=False,  # if True, when the DAG is activated, Airflow will coordinate backfills
+    max_active_runs = 1,  # if backfilling, this will seralize the work 1x per backfill date/job
     tags=["raw", "ingest"]
 )
 def nfl_raw_pipeline():
@@ -32,9 +35,13 @@ def nfl_raw_pipeline():
     def extract(payload:dict) -> dict:
         url = "https://us-central1-btibert-ba882-fall25.cloudfunctions.net/raw-extract-scoreboard"
         ctx = get_current_context()
+        # "Yesterday" as a calendar day relative to this run
+        process_date = (ctx["data_interval_end"] - timedelta(days=1)).strftime("%Y%m%d")
+        print(process_date)
         # add the pieces of info to the payload passed through
         payload['run_id'] = ctx["dag_run"].run_id
-        payload['date'] = ctx["ds_nodash"]
+        payload['date'] = process_date
+        print(f"[extract] process_date={process_date}, run_id={payload['run_id']}")
         resp = invoke_function(url, params=payload)
         print("response=============================")
         print(resp)
@@ -58,6 +65,12 @@ def nfl_raw_pipeline():
         ids = load_payload.get("game_ids") or []
         # dedupe, stringify to be safe for query params
         ids = [str(x) for x in dict.fromkeys(ids)]
+
+        # if there are no ids, bail out.
+        if not ids:
+            print("No game IDs found — skipping remainder of pipeline.")
+            raise AirflowSkipException("No games to process for this date")
+
         print(f"Found {len(ids)} game_ids: {ids}")
         return ids
 
@@ -77,7 +90,25 @@ def nfl_raw_pipeline():
     extract_result = extract(schema_result)
     load_result = load(extract_result)
     game_ids = extract_game_ids(load_result)
-    _ = parse_load_game_detail.expand(game_id=game_ids)
+    mapped_parse = parse_load_game_detail.expand(game_id=game_ids)
+
+    # ---- Fire the next DAG and move on (no waiting) ----
+    # this is also a task!
+    trigger_stage = TriggerDagRunOperator(
+        task_id="trigger_seed_stage",
+        trigger_dag_id="nfl_seed_stage",   # <-- use the TARGET DAG'S *dag_id*, not filename
+        conf={
+            "source_dag_run_id": "{{ dag_run.run_id }}",
+            "source_logical_date": "{{ ds_nodash }}",
+        },
+        wait_for_completion=False,         # fire-and-forget
+        reset_dag_run=False,               # don't clear existing runs if one already exists
+        trigger_rule="none_failed_min_one_success",
+        # ^ ensures this only fires if at least one upstream succeeded;
+        #   if we skipped due to no IDs, this won't trigger.
+    )
+
+    mapped_parse >> trigger_stage
 
 
 nfl_raw_pipeline()
